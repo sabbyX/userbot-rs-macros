@@ -64,7 +64,7 @@ fn build(handler: meta::HandlerMeta, args: Option<meta::CommandMeta>) -> proc_ma
         pub struct #ident;
         #[::async_trait::async_trait]
         impl super::core::handler::Handler for #ident {
-            async fn handle(&self, message: Message, client: ClientHandle) -> ::std::result::Result<(), ::std::boxed::Box<::std::error::Error + Send + Sync>> {
+            async fn handle(&self, message: Message, client: ClientHandle) -> ::anyhow::Result<()> {
                 #inner_call
             }
         }
