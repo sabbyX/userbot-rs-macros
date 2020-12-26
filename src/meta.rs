@@ -56,7 +56,8 @@ impl Parse for CommandMeta {
             "command" => {
                 input.parse::<Token![=]>()?;
                 let name = input.parse::<LitStr>()?;
-                if !name.value().starts_with("*") {
+                // TODO: Ability to set command prefix
+                if !name.value().starts_with('*') {
                     return Err(input.error("Commands should startswith *"));
                 }
                 name
