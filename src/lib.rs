@@ -1,6 +1,6 @@
 /* 
  * This file is part of the userbot-rs-macros (github.com/sabbyX/userbot-rs-macros).
- * Copyright (c) 2020 Sabby.
+ * Copyright (c) 2021 Sabby.
  * Copyright (c) Carapax authors (github.com/tg-rs/carapax)
  * 
  * This program is free software: you can redistribute it and/or modify  
@@ -18,7 +18,8 @@
 
 //! Implementation of `dispatcher` aka function to designate command to a handler
 //! Inspired from [Carapax](https://github.com/tg-rs/carapax) dispatcher implementation 
-mod meta;
+mod handler;
+mod command;
 
 extern crate proc_macro;
 
@@ -28,35 +29,31 @@ use syn::parse_macro_input;
 
 #[proc_macro_attribute]
 pub fn handler(args: TokenStream, input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as meta::HandlerMeta);
+    let input = parse_macro_input!(input as handler::HandlerMeta);
     let args = if args.is_empty() {
         None
     } else {
-        Some(parse_macro_input!(args as meta::CommandMeta))
+        Some(parse_macro_input!(args as command::CommandMeta))
     };
     TokenStream::from(build(input, args))
 }
 
-fn build(handler: meta::HandlerMeta, args: Option<meta::CommandMeta>) -> proc_macro2::TokenStream {
-    let meta::HandlerMeta {
+fn build(handler: handler::HandlerMeta, args: Option<command::CommandMeta>) -> proc_macro2::TokenStream {
+    let handler::HandlerMeta {
         ident,
         handler,
         ident_inner,
     } = handler;
-    let mut inner_call = quote!(#ident_inner(message, client).await);
-    match args {
-        None => {}
-        Some(command) => {
-            let command = command.command;
-            inner_call = quote!(
-                if message.text().starts_with(#command) {
-                    #inner_call
-                } else {
-                    Ok(())
-                }
-            )
+    let inner_call = quote!(#ident_inner(message, client).await);
+    let command_policy = match args {
+        None => quote!(crate::modules::core::command::CommandPolicy::Undefined),
+        Some(v) => {
+            match v {
+                command::CommandMeta::MultiCommand(e) => quote!(crate::modules::core::CommandPolicy::MultiCommand(vec!#e)),
+                command::CommandMeta::Command(cmd) => quote!(crate::modules::core::CommandPolicy::Command(#cmd))
+            }
         }
-    }
+    };
     quote!(
         #handler
         #[allow(non_camel_case_types)]
@@ -67,6 +64,8 @@ fn build(handler: meta::HandlerMeta, args: Option<meta::CommandMeta>) -> proc_ma
             async fn handle(&self, message: Message, client: ClientHandle) -> ::anyhow::Result<()> {
                 #inner_call
             }
+
+            fn command_policy(&self) -> crate::modules::core::CommandPolicy { #command_policy }
         }
     )
 }
