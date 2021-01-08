@@ -44,7 +44,7 @@ fn build(handler: handler::HandlerMeta, args: Option<command::CommandMeta>) -> p
         handler,
         ident_inner,
     } = handler;
-    let inner_call = quote!(#ident_inner(message, client).await);
+    let inner_call = quote!(#ident_inner(message, data).await);
     let command_policy = match args {
         None => quote!(crate::modules::core::command::CommandPolicy::Undefined),
         Some(v) => {
@@ -61,7 +61,7 @@ fn build(handler: handler::HandlerMeta, args: Option<command::CommandMeta>) -> p
         pub struct #ident;
         #[::async_trait::async_trait]
         impl super::core::handler::Handler for #ident {
-            async fn handle(&self, message: Message, client: ClientHandle) -> ::anyhow::Result<()> {
+            async fn handle(&self, message: Message, data: UpdateData) -> ::anyhow::Result<()> {
                 #inner_call
             }
 
