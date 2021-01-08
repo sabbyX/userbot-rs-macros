@@ -17,7 +17,6 @@
  */
 
 use syn::{parse::{Parse, ParseStream}, Token, Ident, LitStr, ExprArray, Result as SynResult, Expr, Lit};
-use std::any::Any;
 
 pub enum CommandMeta {
     Command(LitStr),
